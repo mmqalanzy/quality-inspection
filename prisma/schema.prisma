@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String       @id @default(cuid())
+  telegramUserId String       @unique
+  fullName       String
+  username       String?
+  role           String
+  isActive       Boolean      @default(true)
+  inspections    Inspection[] @relation("InspectorInspections")
+  auditLogs      AuditLog[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([role, isActive])
+}
+
+model Contractor {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  isActive    Boolean      @default(true)
+  inspections Inspection[]
+
+  @@index([isActive])
+}
+
+model City {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  isActive    Boolean      @default(true)
+  inspections Inspection[]
+
+  @@index([isActive])
+}
+
+model InspectionTemplate {
+  id           String         @id @default(cuid())
+  name         String         @unique
+  description  String?
+  isActive     Boolean        @default(true)
+  items        TemplateItem[]
+  inspections  Inspection[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([isActive])
+}
+
+model TemplateItem {
+  id             String             @id @default(cuid())
+  templateId     String
+  template       InspectionTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  order          Int
+  title          String
+  description    String?
+  section        String             @default("DURING_EXECUTION")
+  isRequired     Boolean            @default(true)
+  minimumPhotos  Int                @default(1)
+  maximumPhotos  Int?
+  inspectionItems InspectionItem[]
+
+  @@unique([templateId, order])
+  @@index([templateId])
+  @@index([templateId, section])
+}
+
+model Inspection {
+  id              String             @id @default(cuid())
+  workOrderNumber String
+  templateId      String
+  template        InspectionTemplate @relation(fields: [templateId], references: [id])
+  inspectorId     String
+  inspector       User               @relation("InspectorInspections", fields: [inspectorId], references: [id])
+  contractorId    String
+  contractor      Contractor         @relation(fields: [contractorId], references: [id])
+  cityId          String
+  city            City               @relation(fields: [cityId], references: [id])
+  location        String
+  workDescription String
+  executionStatus String
+  generalNotes    String?
+  status          String             @default("DRAFT")
+  reviewNote      String?
+  reportFileId    String?   @unique
+  reportMessageId Int?
+  items           InspectionItem[]
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([inspectorId, status])
+  @@index([status, createdAt])
+  @@index([workOrderNumber])
+}
+
+model InspectionItem {
+  id             String         @id @default(cuid())
+  inspectionId   String
+  inspection     Inspection     @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  templateItemId String
+  templateItem   TemplateItem   @relation(fields: [templateItemId], references: [id])
+  status         String         @default("NOT_STARTED")
+  notes          String?
+  version        Int            @default(1)
+  photos         EvidencePhoto[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([inspectionId, templateItemId])
+  @@index([inspectionId])
+  @@index([templateItemId])
+  @@index([status])
+}
+
+model EvidencePhoto {
+  id               String         @id @default(cuid())
+  inspectionItemId String
+  inspectionItem   InspectionItem @relation(fields: [inspectionItemId], references: [id], onDelete: Cascade)
+  storageKey       String         @unique
+  originalFileName String?
+  mimeType         String
+  fileSize         Int
+  sortOrder        Int
+  createdAt        DateTime       @default(now())
+
+  @@unique([inspectionItemId, sortOrder])
+  @@index([inspectionItemId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String
+  entityType   String
+  entityId     String
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+}

@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+  --background: #f7f7f4;
+  --foreground: #171717;
+  --surface: #ffffff;
+  --surface-muted: #ecebe4;
+  --primary: #0f766e;
+  --primary-foreground: #ffffff;
+  --border: #d7d5ca;
+  --status-compliant: #16a34a;
+  --status-compliant-bg: #f0fdf4;
+  --status-non-compliant: #dc2626;
+  --status-non-compliant-bg: #fef2f2;
+  --status-not-applicable: #6b7280;
+  --status-not-applicable-bg: #f9fafb;
+  --status-recapture: #ea580c;
+  --status-recapture-bg: #fff7ed;
+  --status-idle: #d97706;
+  --status-idle-bg: #fffbeb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111310;
+    --foreground: #f3f4ed;
+    --surface: #1b1f1a;
+    --surface-muted: #272d26;
+    --primary: #2dd4bf;
+    --primary-foreground: #052e2b;
+    --border: #3d463b;
+    --status-compliant: #4ade80;
+    --status-compliant-bg: #0a2e1a;
+    --status-non-compliant: #f87171;
+    --status-non-compliant-bg: #2e0a0a;
+    --status-not-applicable: #9ca3af;
+    --status-not-applicable-bg: #1f2326;
+    --status-recapture: #fb923c;
+    --status-recapture-bg: #2e1a0a;
+    --status-idle: #fbbf24;
+    --status-idle-bg: #2e260a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    "Segoe UI",
+    Tahoma,
+    Arial,
+    sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
