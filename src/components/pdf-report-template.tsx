@@ -44,29 +44,36 @@ export function PdfReportTemplate({ data }: Props) {
     <div
       id="pdf-report-template"
       dir="rtl"
-      className="bg-white p-8 text-black"
       style={{
         width: "210mm",
         minHeight: "297mm",
+        padding: "24px",
+        backgroundColor: "#ffffff",
+        color: "#000000",
         fontFamily: "'Noto Sans Arabic', 'Tahoma', sans-serif",
         fontSize: "12pt",
         lineHeight: 1.6
       }}
     >
-      <div className="mb-6 flex items-center justify-between border-b-2 border-[#bfa15f] pb-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">تقرير توثيق الجودة</h1>
-          <p className="text-sm text-gray-500">2H Consulting Office للاستشارات الهندسية</p>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "24px",
+          paddingBottom: "16px",
+          borderBottom: "2px solid #bfa15f"
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#111827", margin: 0 }}>تقرير توثيق الجودة</h1>
+          <p style={{ fontSize: "12px", color: "#6b7280", margin: "4px 0 0" }}>2H Consulting Office للاستشارات الهندسية</p>
         </div>
-        <img
-          alt="2H Consulting Office"
-          src="/logo.png"
-          className="h-20 w-auto object-contain"
-        />
+        <img alt="2H Consulting Office" src="/logo.png" style={{ height: "80px", width: "auto", objectFit: "contain" }} />
       </div>
 
-      <h2 className="mb-3 text-lg font-bold text-gray-900">بيانات التفتيش</h2>
-      <table className="mb-6 w-full border-collapse border border-gray-300 text-sm">
+      <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>بيانات التفتيش</h2>
+      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #d1d5db", fontSize: "12px", marginBottom: "24px" }}>
         <tbody>
           {[
             ["رقم أمر العمل", data.workOrderNumber],
@@ -79,47 +86,72 @@ export function PdfReportTemplate({ data }: Props) {
             ["وصف العمل", data.workDescription],
             ["حالة التنفيذ", executionLabel]
           ].map(([label, value]) => (
-            <tr key={label} className="border-b border-gray-300">
-              <td className="w-1/3 border-l border-gray-300 bg-gray-50 p-2 font-semibold">{label}</td>
-              <td className="p-2">{value || "-"}</td>
+            <tr key={label} style={{ borderBottom: "1px solid #d1d5db" }}>
+              <td
+                style={{
+                  width: "33%",
+                  borderLeft: "1px solid #d1d5db",
+                  backgroundColor: "#f9fafb",
+                  padding: "8px",
+                  fontWeight: 600
+                }}
+              >
+                {label}
+              </td>
+              <td style={{ padding: "8px" }}>{value || "-"}</td>
             </tr>
           ))}
           {data.generalNotes ? (
-            <tr className="border-b border-gray-300">
-              <td className="w-1/3 border-l border-gray-300 bg-gray-50 p-2 font-semibold">ملاحظات عامة</td>
-              <td className="p-2">{data.generalNotes}</td>
+            <tr style={{ borderBottom: "1px solid #d1d5db" }}>
+              <td
+                style={{
+                  width: "33%",
+                  borderLeft: "1px solid #d1d5db",
+                  backgroundColor: "#f9fafb",
+                  padding: "8px",
+                  fontWeight: 600
+                }}
+              >
+                ملاحظات عامة
+              </td>
+              <td style={{ padding: "8px" }}>{data.generalNotes}</td>
             </tr>
           ) : null}
         </tbody>
       </table>
 
-      <h2 className="mb-3 text-lg font-bold text-gray-900">جدول بنود التفتيش</h2>
-      <table className="mb-8 w-full border-collapse border border-gray-300 text-sm">
+      <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>جدول بنود التفتيش</h2>
+      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #d1d5db", fontSize: "12px", marginBottom: "32px" }}>
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 p-2">م</th>
-            <th className="border border-gray-300 p-2">البند</th>
-            <th className="border border-gray-300 p-2">الحالة</th>
-            <th className="border border-gray-300 p-2">ملاحظات</th>
+          <tr style={{ backgroundColor: "#f3f4f6" }}>
+            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>م</th>
+            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>البند</th>
+            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>الحالة</th>
+            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>ملاحظات</th>
           </tr>
         </thead>
         <tbody>
           {data.items.map((item) => (
-            <tr key={item.order} className="border-b border-gray-300">
-              <td className="border border-gray-300 p-2 text-center">{item.order}</td>
-              <td className="border border-gray-300 p-2">{item.title}</td>
+            <tr key={item.order} style={{ borderBottom: "1px solid #d1d5db" }}>
+              <td style={{ border: "1px solid #d1d5db", padding: "8px", textAlign: "center" }}>{item.order}</td>
+              <td style={{ border: "1px solid #d1d5db", padding: "8px" }}>{item.title}</td>
               <td
-                className={`border border-gray-300 p-2 text-center font-semibold ${
-                  item.status === "NON_COMPLIANT"
-                    ? "text-red-700"
-                    : item.status === "COMPLIANT"
-                      ? "text-green-700"
-                      : ""
-                }`}
+                style={{
+                  border: "1px solid #d1d5db",
+                  padding: "8px",
+                  textAlign: "center",
+                  fontWeight: 600,
+                  color:
+                    item.status === "NON_COMPLIANT"
+                      ? "#b91c1c"
+                      : item.status === "COMPLIANT"
+                        ? "#15803d"
+                        : "#000000"
+                }}
               >
                 {statusLabels[item.status] ?? item.status}
               </td>
-              <td className="border border-gray-300 p-2">{item.notes || "-"}</td>
+              <td style={{ border: "1px solid #d1d5db", padding: "8px" }}>{item.notes || "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -127,28 +159,41 @@ export function PdfReportTemplate({ data }: Props) {
 
       {data.photos.length > 0 ? (
         <>
-          <h2 className="mb-3 text-lg font-bold text-gray-900">الصور</h2>
+          <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>الصور</h2>
           {data.photos.map((photo, index) => (
             <div
               key={photo.id}
-              className="mb-6 break-inside-avoid border border-gray-300 p-4"
-              style={{ pageBreakInside: "avoid" }}
+              style={{
+                marginBottom: "24px",
+                padding: "16px",
+                border: "1px solid #d1d5db",
+                pageBreakInside: "avoid"
+              }}
             >
-              <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
-                <span className="font-bold text-gray-700">صورة {index + 1}</span>
-                <span className="font-bold text-gray-900">{photo.itemTitle}</span>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "12px",
+                  paddingBottom: "8px",
+                  borderBottom: "1px solid #e5e7eb"
+                }}
+              >
+                <span style={{ fontWeight: "bold", color: "#374151" }}>صورة {index + 1}</span>
+                <span style={{ fontWeight: "bold", color: "#111827" }}>{photo.itemTitle}</span>
               </div>
               <img
                 alt={`صورة ${index + 1}`}
                 src={photo.src}
-                className="mx-auto max-h-[180mm] w-auto object-contain"
+                style={{ display: "block", margin: "0 auto", maxHeight: "180mm", width: "auto", objectFit: "contain" }}
               />
             </div>
           ))}
         </>
       ) : null}
 
-      <p className="mt-8 text-center text-xs text-gray-400">
+      <p style={{ marginTop: "32px", textAlign: "center", fontSize: "10px", color: "#9ca3af" }}>
         تم إنشاء هذا التقرير إلكترونيًا بواسطة نظام توثيق الجودة
       </p>
     </div>
