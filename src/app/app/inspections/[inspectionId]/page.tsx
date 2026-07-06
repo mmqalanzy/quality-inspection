@@ -159,6 +159,30 @@ export default async function InspectionPage({ params }: Props) {
           canSubmit={submittable}
           inspectionId={inspection.id}
           validationWarnings={validationWarnings}
+          inspectionData={{
+            workOrderNumber: inspection.workOrderNumber,
+            inspectorName: inspection.inspector.fullName,
+            contractorName: inspection.contractor.name,
+            cityName: inspection.city.name,
+            location: inspection.location,
+            workDescription: inspection.workDescription,
+            executionStatus: inspection.executionStatus,
+            generalNotes: inspection.generalNotes,
+            submittedAt: new Date().toLocaleDateString("ar-SA"),
+            items: inspection.items.map((item) => ({
+              order: item.templateItem.order,
+              title: item.templateItem.title,
+              status: item.status,
+              notes: item.notes
+            })),
+            photos: inspection.items.flatMap((item) =>
+              item.photos.map((photo) => ({
+                id: photo.id,
+                itemTitle: item.templateItem.title,
+                src: `/api/evidence-photos/${photo.id}`
+              }))
+            )
+          }}
         />
       ) : null}
 

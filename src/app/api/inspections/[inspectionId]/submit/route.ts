@@ -8,7 +8,7 @@ type Props = {
   }>;
 };
 
-export async function POST(_request: Request, { params }: Props) {
+export async function POST(request: Request, { params }: Props) {
   const user = await readSession();
 
   if (!user) {
@@ -16,7 +16,15 @@ export async function POST(_request: Request, { params }: Props) {
   }
 
   const { inspectionId } = await params;
-  const result = await submitInspection(user, inspectionId);
+  const formData = await request.formData().catch(() => null);
+  const reportFile = formData?.get("report");
+
+  if (!(reportFile instanceof Blob)) {
+    return NextResponse.json({ ok: false, message: "لم يتم إرفاق التقرير." }, { status: 400 });
+  }
+
+  const pdfBuffer = Buffer.from(await reportFile.arrayBuffer());
+  const result = await submitInspection(user, inspectionId, pdfBuffer);
 
   if (!result.ok) {
     return NextResponse.json(result, { status: result.status });

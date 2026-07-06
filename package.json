@@ -18,11 +18,11 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@sparticuz/chromium": "^149.0.0",
     "@supabase/supabase-js": "^2.110.0",
     "grammy": "latest",
+    "html2pdf.js": "^0.14.0",
+    "jspdf": "^4.2.1",
     "next": "latest",
-    "puppeteer-core": "^25.3.0",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"
