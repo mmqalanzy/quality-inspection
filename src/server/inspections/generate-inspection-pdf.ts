@@ -54,10 +54,12 @@ async function getBrowser() {
   const isProduction = process.env.NODE_ENV === "production";
 
   if (isProduction) {
+    console.log("[PDF] Resolving Chromium executable for production...");
     const executablePath = await chromium.executablePath();
+    console.log("[PDF] Chromium executable:", executablePath);
     return puppeteer.launch({
       executablePath,
-      args: chromium.args,
+      args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
       headless: true
     });
   }

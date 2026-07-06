@@ -121,11 +121,12 @@ export async function submitInspection(
       reportMessageId = sentMessage.message_id;
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("PDF generation/send failed:", error);
     return {
       ok: false,
       status: 500,
-      message: "تعذر إنشاء التقرير أو إرساله. يرجى المحاولة لاحقاً."
+      message: `تعذر إنشاء التقرير: ${errorMessage}`
     };
   }
 
