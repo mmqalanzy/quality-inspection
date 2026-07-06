@@ -56,7 +56,9 @@ export async function GET(_request: Request, { params }: Props) {
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": photo.mimeType,
-        "Cache-Control": "private, max-age=3600"
+        "Cache-Control": "private, max-age=3600",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS"
       }
     });
   } catch (error) {
