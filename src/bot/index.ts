@@ -45,5 +45,7 @@ export function getBot(): Bot {
 }
 
 export async function handleUpdate(update: unknown): Promise<void> {
-  await getBot().handleUpdate(update as never);
+  const bot = getBot();
+  await bot.init();
+  await bot.handleUpdate(update as never);
 }
