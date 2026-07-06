@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readSession } from "@/server/auth/session";
 import { prisma } from "@/server/db";
 import { canReadInspection } from "@/server/inspections/inspection-access";
-import { getSupabaseClient } from "@/server/storage/supabase-client";
+import { getSupabaseClient } from "@/server/supabase/supabase-client";
 
 export const maxDuration = 30;
 

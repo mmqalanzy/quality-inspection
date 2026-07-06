@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db";
 import { getMaxImageSizeBytes, getServerEnv } from "@/server/env";
 import { canEditInspection } from "./inspection-access";
-import { getSupabaseClient } from "@/server/storage/supabase-client";
+import { getSupabaseClient } from "@/server/supabase/supabase-client";
 import { type SessionUser } from "@/server/auth/session-core";
 
 const allowedMimeTypes = new Set([

@@ -3,7 +3,7 @@ import path from "node:path";
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium-min";
 import { executionStatusArabic, type ExecutionStatus } from "@/domain/inspections/statuses";
-import { getSupabaseClient } from "@/server/storage/supabase-client";
+import { getSupabaseClient } from "@/server/supabase/supabase-client";
 
 export type InspectionPdfData = {
   workOrderNumber: string;
