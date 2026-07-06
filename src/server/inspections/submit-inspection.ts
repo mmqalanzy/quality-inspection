@@ -82,7 +82,7 @@ export async function submitInspection(
       workDescription: inspection.workDescription,
       executionStatus: inspection.executionStatus,
       generalNotes: inspection.generalNotes,
-      approvedAt: now.toISOString().split("T")[0],
+      approvedAt: now.toLocaleDateString("ar-SA"),
       items: inspection.items.map((item) => ({
         order: item.templateItem.order,
         title: item.templateItem.title,

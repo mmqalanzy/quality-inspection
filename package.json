@@ -17,14 +17,12 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@pdf-lib/fontkit": "^1.1.1",
     "@prisma/client": "^5.22.0",
+    "@sparticuz/chromium-min": "^149.0.0",
     "@supabase/supabase-js": "^2.110.0",
-    "arabic-reshaper": "^1.1.0",
-    "arabic-utils": "^6.0.1",
     "grammy": "latest",
     "next": "latest",
-    "pdf-lib": "latest",
+    "puppeteer-core": "^25.3.0",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"

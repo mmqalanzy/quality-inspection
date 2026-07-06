@@ -99,7 +99,7 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
               <img
                 alt={`صورة ${index + 1}`}
                 src={`/api/evidence-photos/${photo.id}`}
-                className="aspect-square w-full object-cover"
+                className="h-40 w-full object-contain"
                 loading="lazy"
               />
               <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-bold text-white">

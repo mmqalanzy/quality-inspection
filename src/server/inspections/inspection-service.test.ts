@@ -59,18 +59,21 @@ describe("inspection services", () => {
     });
   });
 
-  it("creates an inspection with 16 NOT_STARTED items", async () => {
+  it("creates an inspection with NOT_STARTED items matching the template", async () => {
     const result = await createInspection(inspector, validInput(`${prefix}01`));
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const items = await prisma.inspectionItem.findMany({
-      where: { inspectionId: result.inspectionId },
-      select: { status: true }
-    });
+    const [items, templateItems] = await Promise.all([
+      prisma.inspectionItem.findMany({
+        where: { inspectionId: result.inspectionId },
+        select: { status: true }
+      }),
+      prisma.templateItem.count({ where: { templateId } })
+    ]);
 
-    expect(items).toHaveLength(16);
+    expect(items).toHaveLength(templateItems);
     expect(items.every((item) => item.status === "NOT_STARTED")).toBe(true);
   });
 
