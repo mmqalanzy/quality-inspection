@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@sparticuz/chromium-min": "^149.0.0",
+    "@sparticuz/chromium": "^149.0.0",
     "@supabase/supabase-js": "^2.110.0",
     "grammy": "latest",
     "next": "latest",

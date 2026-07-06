@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium-min";
+import chromium from "@sparticuz/chromium";
 import { executionStatusArabic, type ExecutionStatus } from "@/domain/inspections/statuses";
 import { getSupabaseClient } from "@/server/supabase/supabase-client";
 
