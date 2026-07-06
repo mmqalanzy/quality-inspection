@@ -1,4 +1,5 @@
 /* global fetch */
+import "dotenv/config";
 import crypto from "node:crypto";
 import { getServerEnv } from "../src/server/env.ts";
 
