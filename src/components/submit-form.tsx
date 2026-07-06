@@ -106,12 +106,8 @@ export function SubmitForm({ inspectionId, canSubmit, validationWarnings, inspec
         )}
       </section>
 
-      <div
-        ref={templateRef}
-        className="fixed -left-[9999px] top-0"
-        style={{ width: "210mm", pointerEvents: "none" }}
-      >
-        <PdfReportTemplate data={inspectionData} />
+      <div className="fixed -left-[9999px] top-0" style={{ pointerEvents: "none" }}>
+        <PdfReportTemplate ref={templateRef} data={inspectionData} />
       </div>
     </>
   );

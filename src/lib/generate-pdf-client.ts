@@ -11,8 +11,7 @@ export async function generatePdfFromElement(element: HTMLElement): Promise<Blob
       scale: 2,
       useCORS: true,
       allowTaint: true,
-      logging: false,
-      windowWidth: 794
+      logging: false
     },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const }
   };

@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import { executionStatusArabic } from "@/domain/inspections/statuses";
 
 export type PdfInspectionData = {
@@ -37,12 +38,13 @@ const statusLabels: Record<string, string> = {
   NEEDS_RECAPTURE: "يحتاج إعادة تصوير"
 };
 
-export function PdfReportTemplate({ data }: Props) {
+export const PdfReportTemplate = forwardRef<HTMLDivElement, Props>(function PdfReportTemplate({ data }, ref) {
   const executionLabel = executionStatusArabic[data.executionStatus as keyof typeof executionStatusArabic] ?? data.executionStatus;
 
   return (
     <div
       id="pdf-report-template"
+      ref={ref}
       dir="rtl"
       style={{
         width: "210mm",
@@ -198,4 +200,4 @@ export function PdfReportTemplate({ data }: Props) {
       </p>
     </div>
   );
-}
+});
