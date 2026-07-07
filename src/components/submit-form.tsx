@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PdfReportTemplate, type PdfInspectionData } from "./pdf-report-template";
 import { generatePdfFromElement } from "@/lib/generate-pdf-client";
 
@@ -11,62 +11,80 @@ type Props = {
   inspectionData: PdfInspectionData;
 };
 
-type SubmitState = "idle" | "generating" | "submitting" | "success" | "error";
+type SubmitState = "idle" | "preparing" | "generating" | "submitting" | "success" | "error";
 
 export function SubmitForm({ inspectionId, canSubmit, validationWarnings, inspectionData }: Props) {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState("");
   const templateRef = useRef<HTMLDivElement>(null);
+  const hasStartedGeneration = useRef(false);
 
-  async function handleSubmit() {
-    if (!canSubmit) return;
+  useEffect(() => {
+    if (submitState !== "preparing" || hasStartedGeneration.current) return;
     if (!templateRef.current) return;
 
-    setSubmitState("generating");
-    setMessage("");
+    hasStartedGeneration.current = true;
 
-    let pdfBlob: Blob;
-    try {
-      pdfBlob = await generatePdfFromElement(templateRef.current);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      setSubmitState("error");
-      setMessage(`تعذر إنشاء التقرير: ${errorMessage}`);
-      return;
-    }
+    void (async () => {
+      setSubmitState("generating");
+      setMessage("");
 
-    setSubmitState("submitting");
-
-    const formData = new FormData();
-    formData.append("report", pdfBlob, `تقرير_${inspectionData.workOrderNumber}.pdf`);
-
-    try {
-      const response = await fetch(`/api/inspections/${inspectionId}/submit`, {
-        method: "POST",
-        body: formData
-      });
-      const result = (await response.json()) as { ok: boolean; message?: string };
-
-      if (!response.ok || !result.ok) {
+      let pdfBlob: Blob;
+      try {
+        pdfBlob = await generatePdfFromElement(templateRef.current!);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         setSubmitState("error");
-        setMessage(result.message ?? "تعذر إرسال التفتيش.");
+        setMessage(`تعذر إنشاء التقرير: ${errorMessage}`);
+        hasStartedGeneration.current = false;
         return;
       }
 
-      setSubmitState("success");
-      window.location.assign("/app/inspections");
-    } catch {
-      setSubmitState("error");
-      setMessage("تعذر الاتصال بالخادم.");
-    }
+      setSubmitState("submitting");
+
+      const formData = new FormData();
+      formData.append("report", pdfBlob, `تقرير_${inspectionData.workOrderNumber}.pdf`);
+
+      try {
+        const response = await fetch(`/api/inspections/${inspectionId}/submit`, {
+          method: "POST",
+          body: formData
+        });
+        const result = (await response.json()) as { ok: boolean; message?: string };
+
+        if (!response.ok || !result.ok) {
+          setSubmitState("error");
+          setMessage(result.message ?? "تعذر إرسال التفتيش.");
+          hasStartedGeneration.current = false;
+          return;
+        }
+
+        setSubmitState("success");
+        window.location.assign("/app/inspections");
+      } catch {
+        setSubmitState("error");
+        setMessage("تعذر الاتصال بالخادم.");
+        hasStartedGeneration.current = false;
+      }
+    })();
+  }, [submitState, inspectionData.workOrderNumber, inspectionId]);
+
+  function handleSubmit() {
+    if (!canSubmit) return;
+    hasStartedGeneration.current = false;
+    setSubmitState("preparing");
   }
 
+  const showOverlay = submitState === "preparing" || submitState === "generating" || submitState === "submitting";
+
   const buttonText =
-    submitState === "generating"
-      ? "جاري إنشاء التقرير..."
-      : submitState === "submitting"
-        ? "جاري الإرسال..."
-        : "إرسال للمراجعة";
+    submitState === "preparing"
+      ? "جاري التحضير..."
+      : submitState === "generating"
+        ? "جاري إنشاء التقرير..."
+        : submitState === "submitting"
+          ? "جاري الإرسال..."
+          : "إرسال للمراجعة";
 
   return (
     <>
@@ -97,7 +115,7 @@ export function SubmitForm({ inspectionId, canSubmit, validationWarnings, inspec
         ) : (
           <button
             className="mt-4 w-full rounded-lg bg-[var(--primary)] px-4 py-4 text-base font-bold text-[var(--primary-foreground)] disabled:opacity-50"
-            disabled={!canSubmit || submitState === "generating" || submitState === "submitting"}
+            disabled={!canSubmit || showOverlay}
             onClick={() => void handleSubmit()}
             type="button"
           >
@@ -106,20 +124,26 @@ export function SubmitForm({ inspectionId, canSubmit, validationWarnings, inspec
         )}
       </section>
 
-      {submitState === "generating" || submitState === "submitting" ? (
+      {showOverlay ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 text-white">
           <p className="text-center text-lg font-bold">
-            {submitState === "generating" ? "جاري إنشاء التقرير..." : "جاري إرسال التقرير..."}
+            {submitState === "preparing"
+              ? "جاري التحضير..."
+              : submitState === "generating"
+                ? "جاري إنشاء التقرير..."
+                : "جاري إرسال التقرير..."}
           </p>
         </div>
       ) : null}
 
-      <div
-        className="fixed left-0 top-0 -z-40"
-        style={{ width: "210mm", pointerEvents: "none" }}
-      >
-        <PdfReportTemplate ref={templateRef} data={inspectionData} />
-      </div>
+      {showOverlay ? (
+        <div
+          className="fixed left-0 top-0 -z-40"
+          style={{ width: "210mm", pointerEvents: "none" }}
+        >
+          <PdfReportTemplate ref={templateRef} data={inspectionData} />
+        </div>
+      ) : null}
     </>
   );
 }

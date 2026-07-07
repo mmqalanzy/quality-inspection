@@ -1,6 +1,45 @@
 "use client";
 
+async function preloadImages(element: HTMLElement): Promise<void> {
+  const images = Array.from(element.querySelectorAll("img"));
+  await Promise.all(
+    images.map((img) => {
+      return new Promise<void>((resolve) => {
+        if (img.complete && img.naturalWidth > 0) {
+          resolve();
+          return;
+        }
+
+        const cleanup = () => {
+          img.removeEventListener("load", onLoad);
+          img.removeEventListener("error", onError);
+        };
+
+        const onLoad = () => {
+          cleanup();
+          resolve();
+        };
+
+        const onError = () => {
+          cleanup();
+          resolve();
+        };
+
+        img.addEventListener("load", onLoad);
+        img.addEventListener("error", onError);
+
+        // Force reload to trigger load event for cached images
+        const src = img.src;
+        img.src = "";
+        img.src = src;
+      });
+    })
+  );
+}
+
 export async function generatePdfFromElement(element: HTMLElement): Promise<Blob> {
+  await preloadImages(element);
+
   const html2pdf = (await import("html2pdf.js")).default;
 
   const opt = {
@@ -8,7 +47,7 @@ export async function generatePdfFromElement(element: HTMLElement): Promise<Blob
     filename: "report.pdf",
     image: { type: "jpeg" as const, quality: 0.92 },
     html2canvas: {
-      scale: 2,
+      scale: 1,
       useCORS: true,
       allowTaint: true,
       logging: false

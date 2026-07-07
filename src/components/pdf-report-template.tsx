@@ -139,6 +139,8 @@ export const PdfReportTemplate = forwardRef<HTMLDivElement, Props>(function PdfR
         <img
           alt="2H Consulting Office"
           src="/logo.png"
+          crossOrigin="anonymous"
+          decoding="async"
           style={{ height: "60px", width: "auto", objectFit: "contain", marginRight: "12px" }}
         />
       </div>
@@ -212,6 +214,8 @@ export const PdfReportTemplate = forwardRef<HTMLDivElement, Props>(function PdfR
               <img
                 alt={`صورة ${index + 1}`}
                 src={photo.src}
+                crossOrigin="anonymous"
+                decoding="async"
                 style={{
                   display: "block",
                   margin: "0 auto",

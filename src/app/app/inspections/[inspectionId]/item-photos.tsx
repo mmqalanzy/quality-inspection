@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { triggerNotification } from "@/telegram/webapp";
+import { compressImage } from "@/lib/compress-image";
 
 type Photo = {
   id: string;
@@ -20,9 +21,57 @@ type Props = {
 
 type UploadState = "idle" | "uploading" | "error";
 
+const UPLOAD_CONCURRENCY = 3;
+
+async function uploadSinglePhoto(itemId: string, file: File): Promise<{ photo?: Photo; error?: string }> {
+  const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+
+  const formData = new FormData();
+  formData.append("photo", compressed);
+
+  try {
+    const response = await fetch(`/api/inspection-items/${itemId}/photos`, {
+      method: "POST",
+      body: formData
+    });
+    const result = (await response.json()) as {
+      ok: boolean;
+      message?: string;
+      photo?: Photo;
+    };
+
+    if (!response.ok || !result.ok || !result.photo) {
+      return { error: result.message ?? "تعذر رفع الصورة." };
+    }
+
+    return { photo: result.photo };
+  } catch {
+    return { error: "تعذر الاتصال بالخادم." };
+  }
+}
+
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number
+): Promise<T[]> {
+  const results: T[] = [];
+  let index = 0;
+
+  async function worker() {
+    while (index < tasks.length) {
+      const currentIndex = index++;
+      results[currentIndex] = await tasks[currentIndex]();
+    }
+  }
+
+  await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  return results;
+}
+
 export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos }: Props) {
   const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
   const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -33,35 +82,27 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
     if (!files || files.length === 0) return;
     if (!canEdit) return;
 
+    const fileList = Array.from(files);
     setUploadState("uploading");
-    setMessage(`جاري رفع ${files.length} صورة...`);
+    setProgress({ completed: 0, total: fileList.length });
+    setMessage("");
 
     const uploaded: Photo[] = [];
     let lastError = "";
 
-    for (const file of Array.from(files)) {
-      const formData = new FormData();
-      formData.append("photo", file);
+    const tasks = fileList.map((file) => async () => {
+      const result = await uploadSinglePhoto(itemId, file);
+      setProgress((prev) => ({ ...prev, completed: prev.completed + 1 }));
+      return result;
+    });
 
-      try {
-        const response = await fetch(`/api/inspection-items/${itemId}/photos`, {
-          method: "POST",
-          body: formData
-        });
-        const result = (await response.json()) as {
-          ok: boolean;
-          message?: string;
-          photo?: Photo;
-        };
+    const results = await runWithConcurrency(tasks, UPLOAD_CONCURRENCY);
 
-        if (!response.ok || !result.ok || !result.photo) {
-          lastError = result.message ?? "تعذر رفع الصورة.";
-          continue;
-        }
-
+    for (const result of results) {
+      if (result.photo) {
         uploaded.push(result.photo);
-      } catch {
-        lastError = "تعذر الاتصال بالخادم.";
+      } else if (result.error) {
+        lastError = result.error;
       }
     }
 
@@ -70,7 +111,7 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
       triggerNotification("success");
     }
 
-    if (uploaded.length === files.length) {
+    if (uploaded.length === fileList.length) {
       setUploadState("idle");
       setMessage("");
     } else {
@@ -78,6 +119,8 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
       setMessage(lastError || "تعذر رفع بعض الصور.");
       triggerNotification("error");
     }
+
+    setProgress({ completed: 0, total: 0 });
 
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -101,6 +144,7 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
                 src={`/api/evidence-photos/${photo.id}`}
                 className="h-40 w-full object-contain"
                 loading="lazy"
+                decoding="async"
               />
               <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-bold text-white">
                 {index + 1}
@@ -137,7 +181,9 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
             type="button"
           >
             <span className="text-xl">📷</span>
-            {uploadState === "uploading" ? "جاري الرفع..." : "إضافة صور"}
+            {uploadState === "uploading"
+              ? `جاري الرفع... ${progress.completed}/${progress.total}`
+              : "إضافة صور"}
           </button>
         </div>
       ) : null}
