@@ -8,6 +8,7 @@ import { ItemPhotoPicker } from "./item-photos";
 import { InspectionItemEditor } from "./item-editor";
 import { SubmitForm } from "@/components/submit-form";
 import { ReviewActions } from "@/components/review-actions";
+import { RecallForm } from "@/components/recall-form";
 
 export const dynamic = "force-dynamic";
 
@@ -188,6 +189,10 @@ export default async function InspectionPage({ params }: Props) {
 
       {reviewable && isSubmitted ? (
         <ReviewActions inspectionId={inspection.id} />
+      ) : null}
+
+      {isSubmitted && user.role === "INSPECTOR" && user.id === inspection.inspectorId ? (
+        <RecallForm inspectionId={inspection.id} />
       ) : null}
 
       <div className="sticky bottom-0 -mx-4 mt-2 border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3">

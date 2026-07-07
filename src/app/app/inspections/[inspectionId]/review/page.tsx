@@ -4,6 +4,7 @@ import { requireUser } from "@/server/auth/session";
 import { getInspectionForUser } from "@/server/inspections/get-inspection";
 import { canSubmitInspection } from "@/server/inspections/inspection-access";
 import { SubmitForm } from "@/components/submit-form";
+import { RecallForm } from "@/components/recall-form";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,8 @@ export default async function InspectionReviewPage({ params }: Props) {
             )
           }}
         />
+      ) : inspection.status === "SUBMITTED" && user.role === "INSPECTOR" && user.id === inspection.inspectorId ? (
+        <RecallForm inspectionId={inspection.id} />
       ) : (
         <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
           <p className="text-sm text-neutral-600 dark:text-neutral-300">
