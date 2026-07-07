@@ -38,122 +38,154 @@ const statusLabels: Record<string, string> = {
   NEEDS_RECAPTURE: "يحتاج إعادة تصوير"
 };
 
+const pageStyle: React.CSSProperties = {
+  width: "190mm",
+  minHeight: "277mm",
+  padding: "10mm",
+  boxSizing: "border-box",
+  backgroundColor: "#ffffff",
+  color: "#111827",
+  fontFamily: "'Noto Sans Arabic', 'Tahoma', sans-serif",
+  fontSize: "10pt",
+  lineHeight: 1.5,
+  overflowWrap: "break-word",
+  wordWrap: "break-word"
+};
+
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: "13pt",
+  fontWeight: "bold",
+  color: "#111827",
+  marginBottom: "8px",
+  marginTop: "16px",
+  borderBottom: "1px solid #e5e7eb",
+  paddingBottom: "4px"
+};
+
+const tableStyle: React.CSSProperties = {
+  width: "100%",
+  borderCollapse: "collapse",
+  border: "1px solid #9ca3af",
+  fontSize: "9pt",
+  marginBottom: "12px",
+  tableLayout: "fixed"
+};
+
+const cellStyle: React.CSSProperties = {
+  border: "1px solid #9ca3af",
+  padding: "5px",
+  verticalAlign: "top"
+};
+
+const labelCellStyle: React.CSSProperties = {
+  ...cellStyle,
+  backgroundColor: "#f3f4f6",
+  fontWeight: "bold",
+  width: "30%"
+};
+
+const headerCellStyle: React.CSSProperties = {
+  ...cellStyle,
+  backgroundColor: "#e5e7eb",
+  fontWeight: "bold",
+  textAlign: "center"
+};
+
+const photoBoxStyle: React.CSSProperties = {
+  marginBottom: "16px",
+  padding: "10px",
+  border: "1px solid #d1d5db",
+  borderRadius: "4px",
+  pageBreakInside: "avoid",
+  breakInside: "avoid"
+};
+
 export const PdfReportTemplate = forwardRef<HTMLDivElement, Props>(function PdfReportTemplate({ data }, ref) {
   const executionLabel = executionStatusArabic[data.executionStatus as keyof typeof executionStatusArabic] ?? data.executionStatus;
 
+  const infoRows: [string, string | null][] = [
+    ["رقم أمر العمل", data.workOrderNumber],
+    ["التاريخ", data.submittedAt],
+    ["اسم المفتش", data.inspectorName],
+    ["المهندس / الاستشاري", "الحامد"],
+    ["المقاول", data.contractorName],
+    ["المدينة", data.cityName],
+    ["الموقع", data.location],
+    ["وصف العمل", data.workDescription],
+    ["حالة التنفيذ", executionLabel]
+  ];
+  if (data.generalNotes) {
+    infoRows.push(["ملاحظات عامة", data.generalNotes]);
+  }
+
   return (
-    <div
-      id="pdf-report-template"
-      ref={ref}
-      dir="rtl"
-      style={{
-        width: "210mm",
-        minHeight: "297mm",
-        padding: "24px",
-        backgroundColor: "#ffffff",
-        color: "#000000",
-        fontFamily: "'Noto Sans Arabic', 'Tahoma', sans-serif",
-        fontSize: "12pt",
-        lineHeight: 1.6
-      }}
-    >
+    <div id="pdf-report-template" ref={ref} dir="rtl" style={pageStyle}>
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "24px",
-          paddingBottom: "16px",
+          marginBottom: "12px",
+          paddingBottom: "8px",
           borderBottom: "2px solid #bfa15f"
         }}
       >
-        <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#111827", margin: 0 }}>تقرير توثيق الجودة</h1>
-          <p style={{ fontSize: "12px", color: "#6b7280", margin: "4px 0 0" }}>2H Consulting Office للاستشارات الهندسية</p>
+        <div style={{ textAlign: "right", flex: 1 }}>
+          <h1 style={{ fontSize: "18pt", fontWeight: "bold", color: "#111827", margin: 0 }}>تقرير توثيق الجودة</h1>
+          <p style={{ fontSize: "10pt", color: "#6b7280", margin: "4px 0 0" }}>
+            2H Consulting Office للاستشارات الهندسية
+          </p>
         </div>
-        <img alt="2H Consulting Office" src="/logo.png" style={{ height: "80px", width: "auto", objectFit: "contain" }} />
+        <img
+          alt="2H Consulting Office"
+          src="/logo.png"
+          style={{ height: "60px", width: "auto", objectFit: "contain", marginRight: "12px" }}
+        />
       </div>
 
-      <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>بيانات التفتيش</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #d1d5db", fontSize: "12px", marginBottom: "24px" }}>
+      <h2 style={sectionTitleStyle}>بيانات التفتيش</h2>
+      <table style={tableStyle}>
         <tbody>
-          {[
-            ["رقم أمر العمل", data.workOrderNumber],
-            ["التاريخ", data.submittedAt],
-            ["اسم المفتش", data.inspectorName],
-            ["المهندس / الاستشاري", "الحامد"],
-            ["المقاول", data.contractorName],
-            ["المدينة", data.cityName],
-            ["الموقع", data.location],
-            ["وصف العمل", data.workDescription],
-            ["حالة التنفيذ", executionLabel]
-          ].map(([label, value]) => (
-            <tr key={label} style={{ borderBottom: "1px solid #d1d5db" }}>
-              <td
-                style={{
-                  width: "33%",
-                  borderLeft: "1px solid #d1d5db",
-                  backgroundColor: "#f9fafb",
-                  padding: "8px",
-                  fontWeight: 600
-                }}
-              >
-                {label}
-              </td>
-              <td style={{ padding: "8px" }}>{value || "-"}</td>
+          {infoRows.map(([label, value]) => (
+            <tr key={label}>
+              <td style={labelCellStyle}>{label}</td>
+              <td style={cellStyle}>{value || "-"}</td>
             </tr>
           ))}
-          {data.generalNotes ? (
-            <tr style={{ borderBottom: "1px solid #d1d5db" }}>
-              <td
-                style={{
-                  width: "33%",
-                  borderLeft: "1px solid #d1d5db",
-                  backgroundColor: "#f9fafb",
-                  padding: "8px",
-                  fontWeight: 600
-                }}
-              >
-                ملاحظات عامة
-              </td>
-              <td style={{ padding: "8px" }}>{data.generalNotes}</td>
-            </tr>
-          ) : null}
         </tbody>
       </table>
 
-      <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>جدول بنود التفتيش</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #d1d5db", fontSize: "12px", marginBottom: "32px" }}>
+      <h2 style={sectionTitleStyle}>جدول بنود التفتيش</h2>
+      <table style={tableStyle}>
         <thead>
-          <tr style={{ backgroundColor: "#f3f4f6" }}>
-            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>م</th>
-            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>البند</th>
-            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>الحالة</th>
-            <th style={{ border: "1px solid #d1d5db", padding: "8px" }}>ملاحظات</th>
+          <tr>
+            <th style={{ ...headerCellStyle, width: "8%" }}>م</th>
+            <th style={{ ...headerCellStyle, width: "42%" }}>البند</th>
+            <th style={{ ...headerCellStyle, width: "18%" }}>الحالة</th>
+            <th style={{ ...headerCellStyle, width: "32%" }}>ملاحظات</th>
           </tr>
         </thead>
         <tbody>
           {data.items.map((item) => (
-            <tr key={item.order} style={{ borderBottom: "1px solid #d1d5db" }}>
-              <td style={{ border: "1px solid #d1d5db", padding: "8px", textAlign: "center" }}>{item.order}</td>
-              <td style={{ border: "1px solid #d1d5db", padding: "8px" }}>{item.title}</td>
+            <tr key={item.order} style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
+              <td style={{ ...cellStyle, textAlign: "center" }}>{item.order}</td>
+              <td style={cellStyle}>{item.title}</td>
               <td
                 style={{
-                  border: "1px solid #d1d5db",
-                  padding: "8px",
+                  ...cellStyle,
                   textAlign: "center",
-                  fontWeight: 600,
+                  fontWeight: "bold",
                   color:
                     item.status === "NON_COMPLIANT"
                       ? "#b91c1c"
                       : item.status === "COMPLIANT"
                         ? "#15803d"
-                        : "#000000"
+                        : "#111827"
                 }}
               >
                 {statusLabels[item.status] ?? item.status}
               </td>
-              <td style={{ border: "1px solid #d1d5db", padding: "8px" }}>{item.notes || "-"}</td>
+              <td style={cellStyle}>{item.notes || "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -161,41 +193,41 @@ export const PdfReportTemplate = forwardRef<HTMLDivElement, Props>(function PdfR
 
       {data.photos.length > 0 ? (
         <>
-          <h2 style={{ fontSize: "18px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>الصور</h2>
+          <h2 style={sectionTitleStyle}>الصور</h2>
           {data.photos.map((photo, index) => (
-            <div
-              key={photo.id}
-              style={{
-                marginBottom: "24px",
-                padding: "16px",
-                border: "1px solid #d1d5db",
-                pageBreakInside: "avoid"
-              }}
-            >
+            <div key={photo.id} style={photoBoxStyle}>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  marginBottom: "12px",
-                  paddingBottom: "8px",
+                  marginBottom: "8px",
+                  paddingBottom: "6px",
                   borderBottom: "1px solid #e5e7eb"
                 }}
               >
                 <span style={{ fontWeight: "bold", color: "#374151" }}>صورة {index + 1}</span>
-                <span style={{ fontWeight: "bold", color: "#111827" }}>{photo.itemTitle}</span>
+                <span style={{ fontWeight: "bold", color: "#111827", fontSize: "9pt" }}>{photo.itemTitle}</span>
               </div>
               <img
                 alt={`صورة ${index + 1}`}
                 src={photo.src}
-                style={{ display: "block", margin: "0 auto", maxHeight: "180mm", width: "auto", objectFit: "contain" }}
+                style={{
+                  display: "block",
+                  margin: "0 auto",
+                  maxWidth: "100%",
+                  maxHeight: "220mm",
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain"
+                }}
               />
             </div>
           ))}
         </>
       ) : null}
 
-      <p style={{ marginTop: "32px", textAlign: "center", fontSize: "10px", color: "#9ca3af" }}>
+      <p style={{ marginTop: "24px", textAlign: "center", fontSize: "8pt", color: "#9ca3af" }}>
         تم إنشاء هذا التقرير إلكترونيًا بواسطة نظام توثيق الجودة
       </p>
     </div>
