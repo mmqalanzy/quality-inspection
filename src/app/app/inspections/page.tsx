@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { inspectionStatusArabic } from "@/domain/inspections/statuses";
 import { requireUser } from "@/server/auth/session";
 import { listUserInspections } from "@/server/inspections/list-user-inspections";
@@ -20,9 +21,9 @@ export default async function InspectionsPage({ searchParams }: Props) {
           <p className="text-sm text-[var(--primary)]">قائمة الأعمال</p>
           <h1 className="text-2xl font-bold">تفتيشاتي</h1>
         </div>
-        <a className="rounded-md bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-[var(--primary-foreground)]" href="/app/inspections/new">
+        <Link className="rounded-md bg-[var(--primary)] px-3 py-2 text-sm font-semibold text-[var(--primary-foreground)]" href="/app/inspections/new">
           جديد
-        </a>
+        </Link>
       </header>
 
       <form className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3">
@@ -69,9 +70,9 @@ export default async function InspectionsPage({ searchParams }: Props) {
             <p className="mt-3 text-xs text-neutral-500">
               آخر تعديل: {inspection.updatedAt.toLocaleString("ar-SA")}
             </p>
-            <a className="mt-4 inline-flex w-full justify-center rounded-md border border-[var(--border)] px-4 py-3 font-semibold" href={`/app/inspections/${inspection.id}`}>
+            <Link className="mt-4 inline-flex w-full justify-center rounded-md border border-[var(--border)] px-4 py-3 font-semibold" href={`/app/inspections/${inspection.id}`}>
               متابعة
-            </a>
+            </Link>
           </article>
         ))}
       </section>

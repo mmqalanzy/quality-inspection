@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/server/auth/session";
 import { LogoutForm } from "@/components/logout-form";
 import { getUserInspectionCounts } from "@/server/inspections/list-user-inspections";
@@ -31,18 +32,18 @@ export default async function AppPage() {
       </section>
 
       <section className="grid gap-3">
-        <a
+        <Link
           className="rounded-md bg-[var(--primary)] px-4 py-3 text-center font-semibold text-[var(--primary-foreground)]"
           href="/app/inspections/new"
         >
           بدء تفتيش جديد
-        </a>
-        <a
+        </Link>
+        <Link
           className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-center font-semibold"
           href="/app/inspections"
         >
           قائمة الأعمال
-        </a>
+        </Link>
       </section>
       <LogoutForm />
     </main>

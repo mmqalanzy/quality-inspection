@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { itemStatusArabic, executionStatusArabic, inspectionStatusArabic } from "@/domain/inspections/statuses";
 import { getItemSectionIcon, getItemSectionLabel, groupItemsBySection } from "@/domain/inspections/sections";
 import { requireUser } from "@/server/auth/session";
@@ -209,12 +210,12 @@ export default async function InspectionPage({ params }: Props) {
               />
             </div>
           </div>
-          <a
+          <Link
             className="shrink-0 rounded-lg bg-[var(--primary)] px-5 py-2.5 text-sm font-bold text-[var(--primary-foreground)]"
             href={`/app/inspections/${inspection.id}/review`}
           >
             مراجعة
-          </a>
+          </Link>
         </div>
       </div>
     </main>

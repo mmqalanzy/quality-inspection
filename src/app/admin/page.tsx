@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireRole } from "@/server/auth/session";
 import { LogoutForm } from "@/components/logout-form";
 import { listSubmittedInspections, listApprovedInspections } from "@/server/inspections/list-submitted-inspections";
@@ -53,12 +54,12 @@ export default async function AdminPage() {
                   ) : null}
                 </div>
               </div>
-              <a
+              <Link
                 className="mt-3 block w-full rounded-md bg-[var(--primary)] px-4 py-3 text-center text-sm font-bold text-[var(--primary-foreground)]"
                 href={`/app/inspections/${inspection.id}`}
               >
                 عرض التفاصيل
-              </a>
+              </Link>
             </article>
           ))
         )}
@@ -99,12 +100,12 @@ export default async function AdminPage() {
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <a
+                <Link
                   className="rounded-md border border-[var(--border)] px-4 py-3 text-center text-sm font-semibold"
                   href={`/app/inspections/${inspection.id}`}
                 >
                   عرض التفاصيل
-                </a>
+                </Link>
                 <a
                   className="rounded-md bg-[var(--status-compliant)] px-4 py-3 text-center text-sm font-bold text-white"
                   href={`/api/inspections/${inspection.id}/report`}

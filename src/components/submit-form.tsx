@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { type PdfInspectionData } from "./pdf-report-template";
-import { generatePdfWithReactPdf } from "@/lib/generate-pdf-react-pdf";
 
 type Props = {
   inspectionId: string;
@@ -25,6 +24,7 @@ export function SubmitForm({ inspectionId, canSubmit, validationWarnings, inspec
 
     let pdfBlob: Blob;
     try {
+      const { generatePdfWithReactPdf } = await import("@/lib/generate-pdf-react-pdf");
       pdfBlob = await generatePdfWithReactPdf(inspectionData);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

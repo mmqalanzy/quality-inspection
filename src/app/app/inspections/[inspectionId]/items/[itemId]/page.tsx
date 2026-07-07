@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/server/auth/session";
 import { getInspectionItemForUser } from "@/server/inspections/get-inspection";
 import { buildStatusOptions } from "../../../status-options";
@@ -37,20 +38,20 @@ export default async function InspectionItemPage({ params }: Props) {
 
       <nav className="grid grid-cols-2 gap-3">
         {previousItem ? (
-          <a className="rounded-md border border-[var(--border)] px-4 py-3 text-center font-semibold" href={`/app/inspections/${inspection.id}/items/${previousItem.id}`}>
+          <Link className="rounded-md border border-[var(--border)] px-4 py-3 text-center font-semibold" href={`/app/inspections/${inspection.id}/items/${previousItem.id}`}>
             السابق
-          </a>
+          </Link>
         ) : (
           <span />
         )}
         {nextItem ? (
-          <a className="rounded-md border border-[var(--border)] px-4 py-3 text-center font-semibold" href={`/app/inspections/${inspection.id}/items/${nextItem.id}`}>
+          <Link className="rounded-md border border-[var(--border)] px-4 py-3 text-center font-semibold" href={`/app/inspections/${inspection.id}/items/${nextItem.id}`}>
             التالي
-          </a>
+          </Link>
         ) : (
-          <a className="rounded-md border border-[var(--border)] px-4 py-3 text-center font-semibold" href={`/app/inspections/${inspection.id}`}>
+          <Link className="rounded-md border border-[var(--border)] px-4 py-3 text-center font-semibold" href={`/app/inspections/${inspection.id}`}>
             القائمة
-          </a>
+          </Link>
         )}
       </nav>
     </main>
