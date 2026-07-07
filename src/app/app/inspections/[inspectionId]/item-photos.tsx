@@ -3,8 +3,9 @@
 import { useRef, useState } from "react";
 import { triggerNotification } from "@/telegram/webapp";
 import { compressImage } from "@/lib/compress-image";
+import { createThumbnail } from "@/lib/create-thumbnail";
 
-type Photo = {
+type ServerPhoto = {
   id: string;
   storageKey: string;
   mimeType: string;
@@ -12,48 +13,38 @@ type Photo = {
   sortOrder: number;
 };
 
+type OptimisticPhoto = {
+  id: string;
+  localUrl: string;
+  status: "uploading" | "done" | "error";
+  error?: string;
+};
+
 type Props = {
   itemId: string;
-  initialPhotos: Photo[];
+  initialPhotos: ServerPhoto[];
   canEdit: boolean;
   minimumPhotos: number;
 };
 
-type UploadState = "idle" | "uploading" | "error";
-
 const UPLOAD_CONCURRENCY = 3;
 
-async function uploadSinglePhoto(itemId: string, file: File): Promise<{ photo?: Photo; error?: string }> {
-  const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+type UploadTask = {
+  file: File;
+  localUrl: string;
+  localId: string;
+};
 
-  const formData = new FormData();
-  formData.append("photo", compressed);
+type PrepareResult = {
+  ok: true;
+  photoId: string;
+  storageKey: string;
+  uploadUrl: string;
+  thumbStorageKey: string;
+  thumbUploadUrl: string;
+} | { ok: false; message: string };
 
-  try {
-    const response = await fetch(`/api/inspection-items/${itemId}/photos`, {
-      method: "POST",
-      body: formData
-    });
-    const result = (await response.json()) as {
-      ok: boolean;
-      message?: string;
-      photo?: Photo;
-    };
-
-    if (!response.ok || !result.ok || !result.photo) {
-      return { error: result.message ?? "تعذر رفع الصورة." };
-    }
-
-    return { photo: result.photo };
-  } catch {
-    return { error: "تعذر الاتصال بالخادم." };
-  }
-}
-
-async function runWithConcurrency<T>(
-  tasks: (() => Promise<T>)[],
-  concurrency: number
-): Promise<T[]> {
+async function runWithConcurrency<T>(tasks: (() => Promise<T>)[], concurrency: number): Promise<T[]> {
   const results: T[] = [];
   let index = 0;
 
@@ -69,57 +60,149 @@ async function runWithConcurrency<T>(
 }
 
 export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos }: Props) {
-  const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
-  const [uploadState, setUploadState] = useState<UploadState>("idle");
+  const [serverPhotos, setServerPhotos] = useState<ServerPhoto[]>(initialPhotos);
+  const [optimisticPhotos, setOptimisticPhotos] = useState<OptimisticPhoto[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
-  const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const count = photos.length;
+  const allPhotos = [
+    ...serverPhotos.map((photo) => ({ type: "server" as const, photo })),
+    ...optimisticPhotos.map((photo) => ({ type: "optimistic" as const, photo }))
+  ];
+
+  const count = allPhotos.length;
   const meetsMinimum = count >= minimumPhotos;
+
+  async function prepareUpload(file: File): Promise<PrepareResult> {
+    try {
+      const response = await fetch(`/api/inspection-items/${itemId}/photos/prepare`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type,
+          fileSize: file.size
+        })
+      });
+      return (await response.json()) as PrepareResult;
+    } catch {
+      return { ok: false, message: "تعذر إعداد رابط الرفع." };
+    }
+  }
+
+  async function uploadToSupabase(uploadUrl: string, file: File): Promise<boolean> {
+    try {
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type }
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async function confirmUpload(
+    photoId: string,
+    storageKey: string,
+    file: File
+  ): Promise<{ ok: boolean; photo?: ServerPhoto; message?: string }> {
+    try {
+      const response = await fetch(`/api/inspection-items/${itemId}/photos/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          photoId,
+          storageKey,
+          originalFileName: file.name,
+          mimeType: file.type,
+          fileSize: file.size
+        })
+      });
+      return (await response.json()) as { ok: boolean; photo?: ServerPhoto; message?: string };
+    } catch {
+      return { ok: false, message: "تعذر تأكيد الرفع." };
+    }
+  }
+
+  async function uploadSingle(task: UploadTask): Promise<{ localId: string; serverPhoto?: ServerPhoto; error?: string }> {
+    const [compressed, thumbnail] = await Promise.all([
+      compressImage(task.file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 }),
+      createThumbnail(task.file, 300)
+    ]);
+
+    const prepared = await prepareUpload(compressed);
+    if (!prepared.ok) {
+      return { localId: task.localId, error: prepared.message };
+    }
+
+    const [uploaded, thumbUploaded] = await Promise.all([
+      uploadToSupabase(prepared.uploadUrl, compressed),
+      uploadToSupabase(prepared.thumbUploadUrl, thumbnail)
+    ]);
+
+    if (!uploaded || !thumbUploaded) {
+      return { localId: task.localId, error: "تعذر رفع الصورة إلى التخزين." };
+    }
+
+    const confirmed = await confirmUpload(prepared.photoId, prepared.storageKey, compressed);
+    if (!confirmed.ok || !confirmed.photo) {
+      return { localId: task.localId, error: confirmed.message ?? "تعذر تأكيد الرفع." };
+    }
+
+    return { localId: task.localId, serverPhoto: confirmed.photo };
+  }
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     if (!canEdit) return;
 
     const fileList = Array.from(files);
-    setUploadState("uploading");
-    setProgress({ completed: 0, total: fileList.length });
-    setMessage("");
+    const tasks: UploadTask[] = [];
+    const newOptimisticPhotos: OptimisticPhoto[] = [];
 
-    const uploaded: Photo[] = [];
-    let lastError = "";
+    for (const file of fileList) {
+      const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+      const localUrl = URL.createObjectURL(compressed);
+      const localId = crypto.randomUUID();
+      tasks.push({ file: compressed, localUrl, localId });
+      newOptimisticPhotos.push({ id: localId, localUrl, status: "uploading" });
+    }
 
-    const tasks = fileList.map((file) => async () => {
-      const result = await uploadSinglePhoto(itemId, file);
+    setOptimisticPhotos((prev) => [...prev, ...newOptimisticPhotos]);
+    setIsUploading(true);
+    setProgress({ completed: 0, total: tasks.length });
+
+    const uploadTasks = tasks.map((task) => async () => {
+      const result = await uploadSingle(task);
       setProgress((prev) => ({ ...prev, completed: prev.completed + 1 }));
       return result;
     });
 
-    const results = await runWithConcurrency(tasks, UPLOAD_CONCURRENCY);
+    const results = await runWithConcurrency(uploadTasks, UPLOAD_CONCURRENCY);
 
     for (const result of results) {
-      if (result.photo) {
-        uploaded.push(result.photo);
-      } else if (result.error) {
-        lastError = result.error;
+      if (result.serverPhoto) {
+        setServerPhotos((prev) => [...prev, result.serverPhoto!]);
+        setOptimisticPhotos((prev) => prev.filter((p) => p.id !== result.localId));
+        URL.revokeObjectURL(tasks.find((t) => t.localId === result.localId)?.localUrl ?? "");
+      } else {
+        setOptimisticPhotos((prev) =>
+          prev.map((p) => (p.id === result.localId ? { ...p, status: "error", error: result.error } : p))
+        );
       }
     }
 
-    if (uploaded.length > 0) {
-      setPhotos((prev) => [...prev, ...uploaded]);
+    const errors = results.filter((r) => r.error).length;
+    if (errors > 0) {
+      triggerNotification("error");
+    } else {
       triggerNotification("success");
     }
 
-    if (uploaded.length === fileList.length) {
-      setUploadState("idle");
-      setMessage("");
-    } else {
-      setUploadState("error");
-      setMessage(lastError || "تعذر رفع بعض الصور.");
-      triggerNotification("error");
-    }
-
+    setIsUploading(false);
     setProgress({ completed: 0, total: 0 });
 
     if (inputRef.current) {
@@ -129,28 +212,43 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
 
   return (
     <div className="mt-3 grid gap-2">
-      {photos.length > 0 ? (
+      {allPhotos.length > 0 ? (
         <div className="grid grid-cols-3 gap-2">
-          {photos.map((photo, index) => (
-            <a
-              key={photo.id}
-              href={`/api/evidence-photos/${photo.id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="relative block overflow-hidden rounded-lg border border-[var(--border)]"
-            >
-              <img
-                alt={`صورة ${index + 1}`}
-                src={`/api/evidence-photos/${photo.id}`}
-                className="h-40 w-full object-contain"
-                loading="lazy"
-                decoding="async"
-              />
-              <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-bold text-white">
-                {index + 1}
-              </span>
-            </a>
-          ))}
+          {allPhotos.map((entry, index) => {
+            const thumbnailSrc = entry.type === "optimistic" ? entry.photo.localUrl : `/api/evidence-photos/${entry.photo.id}/thumbnail`;
+            const fullHref = entry.type === "optimistic" ? entry.photo.localUrl : `/api/evidence-photos/${entry.photo.id}`;
+            const status = entry.type === "optimistic" ? entry.photo.status : "done";
+
+            return (
+              <a
+                key={entry.type === "optimistic" ? entry.photo.id : entry.photo.id}
+                href={fullHref}
+                target="_blank"
+                rel="noreferrer"
+                className="relative block overflow-hidden rounded-lg border border-[var(--border)]"
+              >
+                <img
+                  alt={`صورة ${index + 1}`}
+                  src={thumbnailSrc}
+                  className="h-40 w-full object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
+                {status === "uploading" ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-xs font-bold text-white">
+                    جاري الرفع
+                  </div>
+                ) : status === "error" ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-red-600/80 text-xs font-bold text-white">
+                    فشل
+                  </div>
+                ) : null}
+                <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-xs font-bold text-white">
+                  {index + 1}
+                </span>
+              </a>
+            );
+          })}
         </div>
       ) : null}
 
@@ -176,22 +274,14 @@ export function ItemPhotoPicker({ itemId, initialPhotos, canEdit, minimumPhotos 
           />
           <button
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-4 text-base font-bold text-[var(--primary-foreground)] disabled:opacity-50"
-            disabled={uploadState === "uploading"}
+            disabled={isUploading}
             onClick={() => inputRef.current?.click()}
             type="button"
           >
             <span className="text-xl">📷</span>
-            {uploadState === "uploading"
-              ? `جاري الرفع... ${progress.completed}/${progress.total}`
-              : "إضافة صور"}
+            {isUploading ? `جاري الرفع... ${progress.completed}/${progress.total}` : "إضافة صور"}
           </button>
         </div>
-      ) : null}
-
-      {message ? (
-        <p className={`text-xs ${uploadState === "error" ? "text-[var(--status-non-compliant)]" : ""}`}>
-          {message}
-        </p>
       ) : null}
     </div>
   );
