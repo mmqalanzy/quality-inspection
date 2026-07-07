@@ -106,7 +106,18 @@ export function SubmitForm({ inspectionId, canSubmit, validationWarnings, inspec
         )}
       </section>
 
-      <div className="fixed -left-[9999px] top-0" style={{ pointerEvents: "none" }}>
+      {submitState === "generating" || submitState === "submitting" ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 text-white">
+          <p className="text-center text-lg font-bold">
+            {submitState === "generating" ? "جاري إنشاء التقرير..." : "جاري إرسال التقرير..."}
+          </p>
+        </div>
+      ) : null}
+
+      <div
+        className="fixed left-0 top-0 -z-40"
+        style={{ width: "210mm", pointerEvents: "none" }}
+      >
         <PdfReportTemplate ref={templateRef} data={inspectionData} />
       </div>
     </>
